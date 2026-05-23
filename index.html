@@ -1,949 +1,625 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <title>Chat System</title>
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      background: #1e1e1e;
-      color: white;
-      margin: 0;
-      padding: 0;
-      display: flex;
-      height: 100vh;
-      overflow: hidden;
-    }
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Pro EAS Broadcast Simulator</title>
+    <style>
+        :root {
+            --bg-color: #0c0e17;
+            --panel-bg: rgba(22, 26, 41, 0.9);
+            --border-color: rgba(255, 255, 255, 0.08);
+            --accent-red: #ff3b30;
+            --accent-green: #34c759;
+            --text-main: #f5f5f7;
+            --text-sub: #8e8e93;
+        }
 
-    /* Left sidebar for rooms */
-    #roomSidebar {
-      width: 220px;
-      background: #141414;
-      border-right: 1px solid #333;
-      display: flex;
-      flex-direction: column;
-    }
+        body {
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+            background: radial-gradient(circle at center, #1c2135 0%, var(--bg-color) 100%);
+            color: var(--text-main);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+            box-sizing: border-box;
+        }
 
-    #roomSidebarHeader {
-      padding: 10px;
-      border-bottom: 1px solid #333;
-      font-weight: bold;
-      font-size: 14px;
-    }
+        h1 {
+            margin: 10px 0 2px;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+        }
 
-    #roomList {
-      flex: 1;
-      overflow-y: auto;
-    }
+        p {
+            color: var(--text-sub);
+            margin-bottom: 24px;
+            font-size: 0.9rem;
+            text-align: center;
+        }
 
-    .roomItem {
-      padding: 8px 10px;
-      cursor: pointer;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      font-size: 14px;
-    }
+        .panel {
+            background: var(--panel-bg);
+            backdrop-filter: blur(16px);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 24px;
+            max-width: 460px;
+            width: 100%;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6);
+        }
 
-    .roomItem:hover {
-      background: #1f1f1f;
-    }
+        label {
+            display: block;
+            margin: 14px 0 4px;
+            font-size: 0.85rem;
+            color: var(--text-sub);
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
 
-    .roomItem.active {
-      background: #2b2b2b;
-    }
+        input, select, textarea {
+            width: 100%;
+            padding: 12px;
+            border-radius: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            background: rgba(0, 0, 0, 0.4);
+            color: var(--text-main);
+            font-size: 0.95rem;
+            box-sizing: border-box;
+            transition: all 0.2s ease;
+        }
 
-    .roomLock {
-      opacity: 0.7;
-      margin-left: 6px;
-    }
+        input:focus, select:focus, textarea:focus {
+            outline: none;
+            border-color: var(--accent-red);
+            background: rgba(0, 0, 0, 0.6);
+        }
 
-    /* Main area */
-    #mainArea {
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-    }
+        textarea {
+            resize: vertical;
+            height: 90px;
+            font-family: inherit;
+        }
 
-    #topBar {
-      background: #111;
-      padding: 8px 12px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      border-bottom: 1px solid #333;
-      font-size: 14px;
-      position: relative;
-    }
+        .row {
+            display: flex;
+            gap: 12px;
+        }
 
-    #roomInfo {
-      opacity: 0.8;
-    }
+        .row > div {
+            flex: 1;
+        }
 
-    #topButtons {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
+        /* Toggle Button Container */
+        .toggle-container {
+            display: flex;
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            padding: 4px;
+            margin: 14px 0 8px;
+        }
 
-    #topButtons button {
-      padding: 6px 10px;
-      background: #4da3ff;
-      border: none;
-      border-radius: 6px;
-      color: white;
-      cursor: pointer;
-      font-size: 13px;
-    }
+        .toggle-btn {
+            flex: 1;
+            padding: 8px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            background: transparent;
+            color: var(--text-sub);
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            margin-top: 0 !important;
+        }
 
-    #topButtons button:hover {
-      background: #1f7bd8;
-    }
+        .toggle-btn.active {
+            background: rgba(255, 255, 255, 0.15);
+            color: var(--text-main);
+        }
 
-    #chatContainer {
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-      padding: 10px 15px;
-      min-height: 0;
-    }
+        .hidden-mode {
+            display: none;
+        }
 
-    #messages {
-      flex: 1;
-      overflow-y: auto;
-      padding-right: 10px;
-      margin-bottom: 10px;
-       min-height: 0;
-    }
+        .broadcast-box {
+            width: 100%;
+            height: 100px;
+            background-color: #000;
+            border: 2px solid #333;
+            border-radius: 8px;
+            margin-top: 16px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+            position: relative;
+            font-family: 'Courier New', Courier, monospace;
+            font-weight: bold;
+            box-sizing: border-box;
+            transition: background-color 0.05s ease;
+        }
 
-    .msg {
-      background: #2c2c2c;
-      padding: 8px 12px;
-      border-radius: 10px;
-      margin-bottom: 8px;
-      max-width: 70%;
-      word-wrap: break-word;
-      position: relative;
-    }
+        .broadcast-box.active-burst {
+            background-color: #b30000;
+            border-color: #ff3b30;
+        }
 
-    .msg .username {
-      font-weight: bold;
-      color: #4da3ff;
-    }
+        .broadcast-box .alert-title {
+            color: #fff;
+            font-size: 1.1rem;
+            letter-spacing: 1px;
+            margin-bottom: 4px;
+            display: none;
+        }
 
-    .adminName {
-      color: #ffb347;
-    }
+        .broadcast-box.active-burst .alert-title,
+        .broadcast-box.active-crawl .alert-title {
+            display: block;
+        }
 
-    .msg .time {
-      font-size: 11px;
-      opacity: 0.6;
-      margin-top: 3px;
-    }
+        .crawl-container {
+            width: 100%;
+            overflow: hidden;
+            white-space: nowrap;
+            display: none;
+            padding: 0 10px;
+            box-sizing: border-box;
+        }
 
-    .msgButtons {
-      position: absolute;
-      right: 6px;
-      top: 6px;
-      display: flex;
-      gap: 4px;
-    }
+        .broadcast-box.active-crawl .crawl-container {
+            display: block;
+        }
 
-    .msgButtons button {
-      background: transparent;
-      border: none;
-      color: #aaa;
-      font-size: 11px;
-      cursor: pointer;
-    }
+        .crawl-text {
+            display: inline-block;
+            color: #ecf0f1;
+            font-size: 1rem;
+            padding-left: 100%;
+            animation: crawl 25s linear infinite;
+        }
 
-    .msgButtons button:hover {
-      color: #fff;
-    }
+        @keyframes crawl {
+            0% { transform: translate3d(0, 0, 0); }
+            100% { transform: translate3d(-100%, 0, 0); }
+        }
 
-    .replyPreview {
-      font-size: 11px;
-      opacity: 0.7;
-      border-left: 2px solid #555;
-      padding-left: 6px;
-      margin-bottom: 4px;
-    }
+        .progress-container {
+            margin: 20px 0 8px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 8px;
+            height: 6px;
+            overflow: hidden;
+        }
 
-    .systemMsg {
-      text-align: center;
-      opacity: 0.7;
-      margin: 6px 0;
-      font-size: 13px;
-    }
+        #progressBar {
+            height: 100%;
+            width: 0;
+            background: linear-gradient(90deg, #ff9500, var(--accent-red));
+            transition: width 0.1s linear;
+        }
 
-    #typingIndicator {
-      font-size: 13px;
-      opacity: 0.7;
-      margin-bottom: 6px;
-      height: 16px;
-    }
+        #statusText {
+            font-size: 0.8rem;
+            color: var(--text-sub);
+            text-align: center;
+            margin-bottom: 12px;
+            font-style: italic;
+        }
 
-    #inputArea {
-      display: flex;
-      flex-direction: column;
-      gap: 6px;
-    }
+        button {
+            width: 100%;
+            padding: 14px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
 
-    #replyBar {
-      display: none;
-      font-size: 12px;
-      opacity: 0.8;
-      background: #252525;
-      padding: 4px 8px;
-      border-radius: 6px;
-      align-items: center;
-      justify-content: space-between;
-    }
+        button#playBtn {
+            background: var(--accent-green);
+            color: #fff;
+            margin-top: 12px;
+        }
 
-    #replyBarText {
-      font-size: 12px;
-    }
+        button#playBtn:hover {
+            background: #2fb34f;
+        }
 
-    #replyCancel {
-      cursor: pointer;
-      color: #ff6666;
-      margin-left: 10px;
-    }
+        button#stopBtn {
+            background: var(--accent-red);
+            color: #fff;
+            display: none;
+            margin-top: 12px;
+        }
 
-    #inputRow {
-      display: flex;
-      gap: 8px;
-    }
+        button#stopBtn:hover {
+            background: #df332a;
+        }
 
-    #msgInput, #usernameInput {
-      flex: 1;
-      padding: 8px;
-      border-radius: 8px;
-      border: none;
-      outline: none;
-      font-size: 15px;
-    }
-
-    #sendBtn, #setUserBtn {
-      padding: 8px 16px;
-      background: #4da3ff;
-      border: none;
-      border-radius: 8px;
-      color: white;
-      cursor: pointer;
-      font-size: 15px;
-    }
-
-    #sendBtn:hover, #setUserBtn:hover {
-      background: #1f7bd8;
-    }
-
-    #usernameBox {
-      background: #111;
-      padding: 10px;
-      display: flex;
-      gap: 8px;
-      border-bottom: 1px solid #333;
-    }
-
-    #adminTag {
-      color: #ffb347;
-      font-weight: bold;
-      margin-left: 8px;
-    }
-
-    /* Generic modals */
-    #modal,
-    #adminModal,
-    #createRoomModal,
-    #joinRoomModal,
-    #leaveModal,
-    #editModal,
-    #deleteRoomModal {
-      position: fixed;
-      top: 0; left: 0;
-      width: 100%; height: 100%;
-      background: rgba(0,0,0,0.6);
-      display: none;
-      align-items: center;
-      justify-content: center;
-      z-index: 9999;
-    }
-
-    .modalBox {
-      background: #222;
-      padding: 20px;
-      border-radius: 10px;
-      width: 320px;
-      text-align: center;
-      box-shadow: 0 0 15px rgba(0,0,0,0.5);
-    }
-
-    .modalBox input {
-      width: 100%;
-      padding: 8px;
-      margin-bottom: 10px;
-      border-radius: 6px;
-      border: none;
-      outline: none;
-      font-size: 14px;
-    }
-
-    .modalButtons {
-      margin-top: 10px;
-      display: flex;
-      justify-content: center;
-      gap: 10px;
-    }
-
-    .modalButtons button {
-      padding: 8px 15px;
-      background: #4da3ff;
-      border: none;
-      border-radius: 6px;
-      cursor: pointer;
-      color: white;
-      font-size: 14px;
-    }
-
-    .modalButtons button:hover {
-      background: #1f7bd8;
-    }
-
-    /* Online users dropdown */
-    #onlinePanel {
-      position: absolute;
-      right: 10px;
-      top: 40px;
-      background: #222;
-      border-radius: 8px;
-      border: 1px solid #333;
-      padding: 8px;
-      min-width: 180px;
-      display: none;
-      z-index: 5000;
-      max-height: 200px;
-      overflow-y: auto;
-      font-size: 13px;
-    }
-
-    .onlineUser {
-      padding: 4px 6px;
-    }
-
-    .onlineUser + .onlineUser {
-      border-top: 1px solid #333;
-    }
-  </style>
+        button:active {
+            transform: scale(0.98);
+        }
+    </style>
 </head>
 <body>
+    <h1>EAS Broadcast Simulator</h1>
+    <p>Replicates a full broadcast sequence: 3-Beep Intro ➔ Headers ➔ Attention Tone ➔ Voice ➔ EOM.</p>
 
-<div id="roomSidebar">
-  <div id="roomSidebarHeader">Rooms</div>
-  <div id="roomList"></div>
-</div>
-
-<div id="mainArea">
-  <div id="usernameBox">
-    <input id="usernameInput" placeholder="Enter your username...">
-    <button id="setUserBtn">Set Username</button>
-  </div>
-
-  <div id="topBar">
-    <div id="roomInfo">Room: <span id="roomName">public</span></div>
-    <div id="topButtons">
-      <button id="createRoomBtn">Create Room</button>
-      <button id="deleteRoomBtn" style="display:none;">Delete Room</button>
-      <button id="leaveRoomBtn">Leave Room</button>
-      <button id="onlineBtn">Online</button>
-    </div>
-  </div>
-
-  <div id="chatContainer">
-    <div id="messages"></div>
-    <div id="typingIndicator"></div>
-
-    <div id="inputArea">
-      <div id="replyBar">
-        <span id="replyBarText"></span>
-        <span id="replyCancel">✕</span>
-      </div>
-      <div id="inputRow">
-        <input id="msgInput" placeholder="Type a message..." disabled>
-        <button id="sendBtn" disabled>Send</button>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- Info modal -->
-<div id="modal">
-  <div class="modalBox">
-    <div id="modalMessage"></div>
-    <div class="modalButtons">
-      <button id="modalClose">OK</button>
-    </div>
-  </div>
-</div>
-
-<!-- Admin password modal -->
-<div id="adminModal">
-  <div class="modalBox">
-    <div style="margin-bottom: 10px;">Enter admin password for <b id="adminUserLabel"></b></div>
-    <input type="password" id="adminPasswordInput" placeholder="Admin password">
-    <div class="modalButtons">
-      <button id="adminConfirm">Confirm</button>
-      <button id="adminCancel">Cancel</button>
-    </div>
-  </div>
-</div>
-
-<!-- Create room modal -->
-<div id="createRoomModal">
-  <div class="modalBox">
-    <div style="margin-bottom: 10px;">Create Room</div>
-    <input id="createRoomName" placeholder="Room name">
-    <input id="createRoomPassword" placeholder="Password (optional)">
-    <div class="modalButtons">
-      <button id="createRoomConfirm">Create</button>
-      <button id="createRoomCancel">Cancel</button>
-    </div>
-  </div>
-</div>
-
-<!-- Join room modal -->
-<div id="joinRoomModal">
-  <div class="modalBox">
-    <div style="margin-bottom: 10px;">Join Room</div>
-    <input id="joinRoomName" placeholder="Room name">
-    <input id="joinRoomPassword" placeholder="Password (if any)">
-    <div class="modalButtons">
-      <button id="joinRoomConfirm">Join</button>
-      <button id="joinRoomCancel">Cancel</button>
-    </div>
-  </div>
-</div>
-
-<!-- Leave room modal -->
-<div id="leaveModal">
-  <div class="modalBox">
-    <div style="margin-bottom: 10px;">Do you want to leave this room?</div>
-    <div class="modalButtons">
-      <button id="leaveYes">Yes</button>
-      <button id="leaveNo">No</button>
-    </div>
-  </div>
-</div>
-
-<!-- Edit message modal -->
-<div id="editModal">
-  <div class="modalBox">
-    <div style="margin-bottom: 10px;">Edit Message</div>
-    <input id="editMessageInput" placeholder="New message text">
-    <div class="modalButtons">
-      <button id="editConfirm">Save</button>
-      <button id="editCancel">Cancel</button>
-    </div>
-  </div>
-</div>
-
-<!-- Delete room modal -->
-<div id="deleteRoomModal">
-  <div class="modalBox">
-    <div style="margin-bottom: 10px;">Delete this room and move everyone to public?</div>
-    <div class="modalButtons">
-      <button id="deleteRoomYes">Yes</button>
-      <button id="deleteRoomNo">No</button>
-    </div>
-  </div>
-</div>
-
-<!-- Online users panel -->
-<div id="onlinePanel"></div>
-
-<script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
-<script>
-  // Placeholder backend URL (Render)
-  const BACKEND_URL = "https://chatbackend-d4v6.onrender.com";
-  const socket = io(BACKEND_URL);
-
-
-  let username = null;
-  let typingTimeout;
-  let isAdmin = false;
-  let pendingAdminName = null;
-  let pendingEditMessageId = null;
-  let replyToId = null;
-  let replyToText = "";
-  let currentRoom = "public";
-  let currentUsers = [];
-  let rooms = [];
-
-  const roomNameEl = document.getElementById("roomName");
-  const messagesEl = document.getElementById("messages");
-  const typingEl = document.getElementById("typingIndicator");
-  const msgInput = document.getElementById("msgInput");
-  const sendBtn = document.getElementById("sendBtn");
-  const deleteRoomBtn = document.getElementById("deleteRoomBtn");
-  const onlinePanel = document.getElementById("onlinePanel");
-
-  function showModal(msg) {
-    document.getElementById("modalMessage").textContent = msg;
-    document.getElementById("modal").style.display = "flex";
-  }
-
-  document.getElementById("modalClose").onclick = () => {
-    document.getElementById("modal").style.display = "none";
-  };
-
-  // Username + admin password flow
-  document.getElementById("setUserBtn").onclick = () => {
-    const name = document.getElementById("usernameInput").value.trim();
-    if (!name) return showModal("Enter a username first!");
-
-    if (name === "Schooluser982" || name === "Friend1") {
-      pendingAdminName = name;
-      document.getElementById("adminUserLabel").textContent = name;
-      document.getElementById("adminPasswordInput").value = "";
-      document.getElementById("adminModal").style.display = "flex";
-    } else {
-      setUsername(name, "");
-    }
-  };
-
-  function setUsername(name, adminPassword) {
-    socket.emit("set username", { username: name, adminPassword }, (res) => {
-      if (!res.ok) {
-        if (res.error === "admin_password_required") {
-          pendingAdminName = name;
-          document.getElementById("adminUserLabel").textContent = name;
-          document.getElementById("adminPasswordInput").value = "";
-          document.getElementById("adminModal").style.display = "flex";
-          return;
-        }
-        if (res.error === "wrong_admin_password") {
-          return showModal("Incorrect admin password.");
-        }
-        return showModal(res.error);
-      }
-
-      username = name;
-      isAdmin = res.isAdmin;
-      currentRoom = res.room || "public";
-      roomNameEl.textContent = currentRoom;
-
-      msgInput.disabled = false;
-      sendBtn.disabled = false;
-      document.getElementById("usernameBox").style.display = "none";
-
-      if (isAdmin) {
-        if (!document.getElementById("adminTag")) {
-          const tag = document.createElement("span");
-          tag.id = "adminTag";
-          tag.textContent = "(ADMIN)";
-          document.getElementById("roomInfo").appendChild(tag);
-        }
-        deleteRoomBtn.style.display = "inline-block";
-      }
-    });
-  }
-
-  // Admin modal buttons
-  document.getElementById("adminConfirm").onclick = () => {
-    const pw = document.getElementById("adminPasswordInput").value;
-    document.getElementById("adminModal").style.display = "none";
-    if (!pendingAdminName) return;
-    setUsername(pendingAdminName, pw);
-    pendingAdminName = null;
-  };
-
-  document.getElementById("adminCancel").onclick = () => {
-    document.getElementById("adminModal").style.display = "none";
-    pendingAdminName = null;
-  };
-
-  // Create room modal
-  document.getElementById("createRoomBtn").onclick = () => {
-    if (!username) return showModal("Set username first.");
-    document.getElementById("createRoomName").value = "";
-    document.getElementById("createRoomPassword").value = "";
-    document.getElementById("createRoomModal").style.display = "flex";
-  };
-
-  document.getElementById("createRoomConfirm").onclick = () => {
-    const roomName = document.getElementById("createRoomName").value.trim();
-    const password = document.getElementById("createRoomPassword").value;
-    if (!roomName) {
-      return showModal("Room name required.");
-    }
-    socket.emit("create room", { roomName, password }, (res) => {
-      if (!res.ok) {
-        showModal(res.error);
-      } else {
-        showModal("Room created. Click it in the sidebar to join.");
-      }
-    });
-    document.getElementById("createRoomModal").style.display = "none";
-  };
-
-  document.getElementById("createRoomCancel").onclick = () => {
-    document.getElementById("createRoomModal").style.display = "none";
-  };
-
-  // Join room modal (for non-admins on locked rooms)
-  document.getElementById("joinRoomConfirm").onclick = () => {
-    const roomName = document.getElementById("joinRoomName").value.trim();
-    const password = document.getElementById("joinRoomPassword").value;
-    if (!roomName) {
-      return showModal("Room name required.");
-    }
-    socket.emit("join room", { roomName, password }, (res) => {
-      if (!res.ok) {
-        showModal(res.error);
-      } else {
-        currentRoom = res.room;
-        roomNameEl.textContent = res.room;
-        messagesEl.innerHTML = "";
-        clearReply();
-        renderRooms();
-      }
-    });
-    document.getElementById("joinRoomModal").style.display = "none";
-  };
-
-  document.getElementById("joinRoomCancel").onclick = () => {
-    document.getElementById("joinRoomModal").style.display = "none";
-  };
-
-  // Leave room modal
-  document.getElementById("leaveRoomBtn").onclick = () => {
-    if (!username) return showModal("Set username first.");
-    document.getElementById("leaveModal").style.display = "flex";
-  };
-
-  document.getElementById("leaveYes").onclick = () => {
-    document.getElementById("leaveModal").style.display = "none";
-    socket.emit("leave room", (res) => {
-      if (!res.ok) {
-        showModal(res.error);
-      } else {
-        currentRoom = res.room;
-        roomNameEl.textContent = res.room;
-        messagesEl.innerHTML = "";
-        clearReply();
-        renderRooms();
-      }
-    });
-  };
-
-  document.getElementById("leaveNo").onclick = () => {
-    document.getElementById("leaveModal").style.display = "none";
-  };
-
-  // Delete room modal (admin only)
-  deleteRoomBtn.onclick = () => {
-    if (!username) return showModal("Set username first.");
-    if (!isAdmin) return showModal("Only admins can delete rooms.");
-    if (currentRoom === "public") return showModal("You cannot delete the public room.");
-    document.getElementById("deleteRoomModal").style.display = "flex";
-  };
-
-  document.getElementById("deleteRoomYes").onclick = () => {
-    document.getElementById("deleteRoomModal").style.display = "none";
-    const roomToDelete = currentRoom;
-    socket.emit("delete room", roomToDelete, (res) => {
-      if (!res.ok) {
-        showModal(res.error);
-      } else {
-        currentRoom = "public";
-        roomNameEl.textContent = "public";
-        messagesEl.innerHTML = "";
-        clearReply();
-        showSystemMessage(`Room "${roomToDelete}" deleted. Everyone moved to public.`);
-      }
-    });
-  };
-
-  document.getElementById("deleteRoomNo").onclick = () => {
-    document.getElementById("deleteRoomModal").style.display = "none";
-  };
-
-  // Online users dropdown
-  document.getElementById("onlineBtn").onclick = () => {
-    if (onlinePanel.style.display === "flex") {
-      onlinePanel.style.display = "none";
-    } else {
-      renderOnlinePanel();
-      onlinePanel.style.display = "flex";
-    }
-  };
-
-  function renderOnlinePanel() {
-    onlinePanel.innerHTML = "";
-    if (!currentUsers.length) {
-      onlinePanel.textContent = "No users online.";
-      return;
-    }
-    currentUsers.forEach((u) => {
-      const div = document.createElement("div");
-      div.className = "onlineUser";
-      div.textContent = u.username;
-      if (u.isAdmin) {
-        div.classList.add("adminName");
-      }
-      onlinePanel.appendChild(div);
-    });
-  }
-
-  // Send message
-  function send() {
-    if (!msgInput.value.trim()) return;
-
-    socket.emit("chat message", {
-      text: msgInput.value,
-      replyToId: replyToId
-    });
-
-    msgInput.value = "";
-    clearReply();
-    socket.emit("stop typing");
-  }
-
-  sendBtn.onclick = send;
-
-  msgInput.addEventListener("keydown", (e) => {
-    if (e.key === "Enter") send();
-
-    if (!username) return;
-    socket.emit("typing");
-
-    clearTimeout(typingTimeout);
-    typingTimeout = setTimeout(() => {
-      socket.emit("stop typing");
-    }, 800);
-  });
-
-  // Reply bar
-  function setReply(id, text, user) {
-    replyToId = id;
-    replyToText = text;
-    const replyBar = document.getElementById("replyBar");
-    const replyBarText = document.getElementById("replyBarText");
-    replyBarText.textContent = `Replying to ${user}: "${text.slice(0, 40)}"`;
-    replyBar.style.display = "flex";
-  }
-
-  function clearReply() {
-    replyToId = null;
-    replyToText = "";
-    document.getElementById("replyBar").style.display = "none";
-  }
-
-  document.getElementById("replyCancel").onclick = clearReply;
-
-  // Edit modal
-  document.getElementById("editConfirm").onclick = () => {
-    const newText = document.getElementById("editMessageInput").value.trim();
-    if (!newText || !pendingEditMessageId) {
-      document.getElementById("editModal").style.display = "none";
-      return;
-    }
-    socket.emit("edit message", {
-      id: pendingEditMessageId,
-      newText
-    });
-    pendingEditMessageId = null;
-    document.getElementById("editModal").style.display = "none";
-  };
-
-  document.getElementById("editCancel").onclick = () => {
-    pendingEditMessageId = null;
-    document.getElementById("editModal").style.display = "none";
-  };
-
-  // Display chat messages
-  socket.on("chat message", (msg) => {
-    const div = document.createElement("div");
-    div.className = "msg";
-    div.id = msg.id;
-
-    let replyHtml = "";
-    if (msg.replyToId && document.getElementById(msg.replyToId)) {
-      const original = document.getElementById(msg.replyToId);
-      const originalUser = original.querySelector(".username").textContent;
-      const originalText = original.querySelector(".text").textContent;
-      replyHtml = `
-        <div class="replyPreview">
-          Replying to ${originalUser}: "${originalText.slice(0, 40)}"
+    <div class="panel">
+        <div class="row">
+            <div>
+                <label for="beepFreq">Intro Beep Freq (Hz)</label>
+                <input id="beepFreq" type="number" value="1000" />
+            </div>
+            <div>
+                <label for="beepLen">Beep / Pause (s)</label>
+                <input id="beepLen" type="number" value="0.25" step="0.05" />
+            </div>
         </div>
-      `;
-    }
 
-    const adminClass = msg.isAdmin ? "username adminName" : "username";
+        <div class="row">
+            <div>
+                <label for="freq1">Header Freq 1 (Hz)</label>
+                <input id="freq1" type="number" value="853" />
+            </div>
+            <div>
+                <label for="freq2">Header Freq 2 (Hz)</label>
+                <input id="freq2" type="number" value="960" />
+            </div>
+        </div>
+        
+        <div class="row">
+            <div>
+                <label for="longDuration">Attention Tone (s)</label>
+                <input id="longDuration" type="number" value="8.0" step="0.5" />
+            </div>
+            <div>
+                <label for="volume">Volume</label>
+                <input id="volume" type="number" value="0.2" min="0" max="1" step="0.05" />
+            </div>
+        </div>
 
-    div.innerHTML = `
-      ${replyHtml}
-      <div class="${adminClass}">${msg.user}</div>
-      <div class="text">${msg.text}</div>
-      <div class="time">${msg.time}</div>
-      <div class="msgButtons">
-        <button class="replyBtn">Reply</button>
-        <button class="editBtn">Edit</button>
-        <button class="deleteBtn">Del</button>
-      </div>
-    `;
+        <!-- Mode Swapper -->
+        <label>Voice Source Mode</label>
+        <div class="toggle-container">
+            <button type="button" id="modeTtsBtn" class="toggle-btn active">Live System TTS</button>
+            <button type="button" id="modeFileBtn" class="toggle-btn">Custom Audio File</button>
+        </div>
 
-    const canEditOrDelete = (msg.user === username) || isAdmin;
+        <!-- Mode A: System TTS Configuration -->
+        <div id="ttsConfigSection">
+            <label for="voiceSelect">EAS TTS Voice Engine</label>
+            <select id="voiceSelect"><option value="">Loading system voices...</option></select>
+        </div>
 
-    const replyBtn = div.querySelector(".replyBtn");
-    replyBtn.onclick = () => {
-      const text = div.querySelector(".text").textContent;
-      const user = div.querySelector(".username").textContent;
-      setReply(msg.id, text, user);
-    };
+        <!-- Mode B: Custom Audio Upload Configuration -->
+        <div id="fileConfigSection" class="hidden-mode">
+            <label for="audioUpload">Upload Custom TTS File (.mp3, .wav, .ogg)</label>
+            <input type="file" id="audioUpload" accept="audio/*" />
+        </div>
 
-    const editBtn = div.querySelector(".editBtn");
-    const deleteBtn = div.querySelector(".deleteBtn");
+        <label for="alertText">Alert Text</label>
+        <textarea id="alertText">The National Weather Service in Philadelphia has issued a Tornado Warning for Montgomery County, Delaware County, and Bucks County, PA until 9:00 PM. At 7:50 PM, a severe thunderstorm capable of producing a tornado was located near Hamburg, moving East at 35 mph. Hazard: Tornado and quarter-sized hail. Source: Radar-indicated rotation. Impact: Flying debris will be dangerous. Mobile homes will be damaged or destroyed. Roof, window, and vehicle damage is likely. Precautionary Action: TAKE COVER NOW! Move to a basement or interior room on the lowest floor. Avoid windows.</textarea>
 
-    if (!canEditOrDelete) {
-      editBtn.style.display = "none";
-      deleteBtn.style.display = "none";
-    } else {
-      editBtn.onclick = () => {
-        pendingEditMessageId = msg.id;
-        document.getElementById("editMessageInput").value = div.querySelector(".text").textContent;
-        document.getElementById("editModal").style.display = "flex";
-      };
+        <div id="broadcastBox" class="broadcast-box">
+            <div class="alert-title">EMERGENCY ALERT</div>
+            <div class="crawl-container">
+                <div id="crawlText" class="crawl-text"></div>
+            </div>
+        </div>
 
-      deleteBtn.onclick = () => {
-        socket.emit("delete message", msg.id);
-      };
-    }
+        <div class="progress-container">
+            <div id="progressBar"></div>
+        </div>
+        <div id="statusText">System Ready</div>
+        
+        <button id="playBtn">Transmit EAS Alert</button>
+        <button id="stopBtn">Abort Transmission</button>
+    </div>
 
-    messagesEl.appendChild(div);
-    messagesEl.scrollTop = messagesEl.scrollHeight;
-  });
+    <script>
+        const playBtn = document.getElementById('playBtn');
+        const stopBtn = document.getElementById('stopBtn');
+        const statusText = document.getElementById('statusText');
+        const progressBar = document.getElementById('progressBar');
+        const broadcastBox = document.getElementById('broadcastBox');
+        const crawlText = document.getElementById('crawlText');
+        const voiceSelect = document.getElementById('voiceSelect');
 
-  // Handle edited messages
-  socket.on("edit message", (data) => {
-    const msgDiv = document.getElementById(data.id);
-    if (!msgDiv) return;
+        // Mode Switching Nodes
+        const modeTtsBtn = document.getElementById('modeTtsBtn');
+        const modeFileBtn = document.getElementById('modeFileBtn');
+        const ttsConfigSection = document.getElementById('ttsConfigSection');
+        const fileConfigSection = document.getElementById('fileConfigSection');
+        const audioUpload = document.getElementById('audioUpload');
 
-    msgDiv.querySelector(".text").textContent = data.newText;
+        let audioCtx = null;
+        let activeNodes = [];
+        let isPlaying = false;
+        let currentUtterance = null;
+        let activeAudioElement = null; // Stores uploaded audio track while playing
+        let currentMode = 'tts'; // 'tts' or 'file'
 
-    const timeEl = msgDiv.querySelector(".time");
-    if (!timeEl.textContent.includes("(edited)")) {
-      timeEl.textContent += " (edited)";
-    }
-  });
+        // Swap Interface Layout Depending on Mode Selection
+        modeTtsBtn.addEventListener('click', () => {
+            currentMode = 'tts';
+            modeTtsBtn.classList.add('active');
+            modeFileBtn.classList.remove('active');
+            ttsConfigSection.classList.remove('hidden-mode');
+            fileConfigSection.classList.add('hidden-mode');
+        });
 
-  // Handle deleted messages
-  socket.on("delete message", (data) => {
-    const msgDiv = document.getElementById(data.id);
-    if (!msgDiv) return;
-    msgDiv.remove();
-  });
+        modeFileBtn.addEventListener('click', () => {
+            currentMode = 'file';
+            modeFileBtn.classList.add('active');
+            modeTtsBtn.classList.remove('active');
+            fileConfigSection.classList.remove('hidden-mode');
+            ttsConfigSection.classList.add('hidden-mode');
+        });
 
-  // Typing indicator
-  socket.on("typing", (user) => {
-    typingEl.textContent = `${user} is typing...`;
-  });
-
-  socket.on("stop typing", () => {
-    typingEl.textContent = "";
-  });
-
-  // Join/Leave notifications
-  socket.on("user joined", (data) => {
-    showSystemMessage(`${data.user} joined ${data.room}`);
-  });
-
-  socket.on("user left", (data) => {
-    showSystemMessage(`${data.user} left ${data.room}`);
-  });
-
-  // System messages
-  socket.on("system message", (text) => {
-    showSystemMessage(text);
-  });
-
-  function showSystemMessage(text) {
-    const div = document.createElement("div");
-    div.className = "systemMsg";
-    div.textContent = text;
-    messagesEl.appendChild(div);
-    messagesEl.scrollTop = messagesEl.scrollHeight;
-  }
-
-  // Rooms update
-  socket.on("rooms update", (list) => {
-    rooms = list;
-    renderRooms();
-  });
-
-  function renderRooms() {
-    const roomList = document.getElementById("roomList");
-    roomList.innerHTML = "";
-    rooms.forEach((r) => {
-      const div = document.createElement("div");
-      div.className = "roomItem";
-      if (r.name === currentRoom) div.classList.add("active");
-
-      const nameSpan = document.createElement("span");
-      nameSpan.textContent = r.name;
-
-      const lockSpan = document.createElement("span");
-      lockSpan.className = "roomLock";
-      lockSpan.textContent = r.locked ? "🔒" : "🔓";
-
-      div.appendChild(nameSpan);
-      div.appendChild(lockSpan);
-
-      div.onclick = () => {
-        if (!username) {
-          showModal("Set username first.");
-          return;
+        function populateVoices() {
+            if (typeof speechSynthesis === 'undefined') return;
+            const voices = speechSynthesis.getVoices();
+            voiceSelect.innerHTML = '';
+            
+            voices.forEach((voice) => {
+                const option = document.createElement('option');
+                option.value = voice.lang;
+                option.textContent = `${voice.name} (${voice.lang})`;
+                if (voice.name.includes('David') || voice.name.includes('Zira') || voice.name.includes('Google US English')) {
+                    option.selected = true;
+                }
+                option.setAttribute('data-name', voice.name);
+                voiceSelect.appendChild(option);
+            });
         }
-        if (r.name === currentRoom) return;
+        populateVoices();
+        if (speechSynthesis.onvoiceschanged !== undefined) {
+            speechSynthesis.onvoiceschanged = populateVoices;
+        }
 
-        // Admin bypass for locked rooms
-        if (r.locked && !isAdmin) {
-          document.getElementById("joinRoomName").value = r.name;
-          document.getElementById("joinRoomName").disabled = true;
-          document.getElementById("joinRoomPassword").value = "";
-          document.getElementById("joinRoomModal").style.display = "flex";
-        } else {
-          socket.emit("join room", { roomName: r.name, password: "" }, (res) => {
-            if (!res.ok) {
-              showModal(res.error);
-            } else {
-              currentRoom = res.room;
-              roomNameEl.textContent = res.room;
-              messagesEl.innerHTML = "";
-              clearReply();
-              renderRooms();
+        function updateProgress(percent) {
+            progressBar.style.width = percent + '%';
+        }
+
+        function createTone(freq1, freq2, duration, startTime, vol) {
+            const osc1 = audioCtx.createOscillator();
+            const osc2 = audioCtx.createOscillator();
+            const gainNode = audioCtx.createGain();
+
+            osc1.type = 'sine';
+            osc2.type = 'sine';
+            osc1.frequency.value = freq1;
+            osc2.frequency.value = freq2;
+
+            gainNode.gain.setValueAtTime(vol / 2, startTime);
+            gainNode.gain.setValueAtTime(vol / 2, startTime + duration - 0.02);
+            gainNode.gain.exponentialRampToValueAtTime(0.0001, startTime + duration);
+
+            osc1.connect(gainNode);
+            osc2.connect(gainNode);
+            gainNode.connect(audioCtx.destination);
+
+            osc1.start(startTime);
+            osc2.start(startTime);
+            osc1.stop(startTime + duration);
+            osc2.stop(startTime + duration);
+
+            activeNodes.push(osc1, osc2, gainNode);
+        }
+
+        function createHeaderBurst(startTime, vol) {
+            const duration = 0.25;
+            const osc1 = audioCtx.createOscillator();
+            const osc2 = audioCtx.createOscillator();
+            const gainNode = audioCtx.createGain();
+
+            osc1.type = 'sine';
+            osc2.type = 'sine';
+            osc1.frequency.value = 2083.3;
+            osc2.frequency.value = 1562.5;
+
+            gainNode.gain.setValueAtTime(vol / 2, startTime);
+            gainNode.gain.setValueAtTime(vol / 2, startTime + duration - 0.01);
+            gainNode.gain.exponentialRampToValueAtTime(0.0001, startTime + duration);
+
+            osc1.connect(gainNode);
+            osc2.connect(gainNode);
+            gainNode.connect(audioCtx.destination);
+
+            osc1.start(startTime);
+            osc2.start(startTime);
+            osc1.stop(startTime + duration);
+            osc2.stop(startTime + duration);
+
+            activeNodes.push(osc1, osc2, gainNode);
+        }
+
+        function triggerEomTails(vol) {
+            if (!isPlaying) return;
+            broadcastBox.className = 'broadcast-box active-burst';
+            statusText.textContent = "Transmitting EOM Tails...";
+            updateProgress(90);
+            
+            // Generate a brand new context for post-voice processing safely
+            const postAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            let eomTime = postAudioCtx.currentTime;
+            
+            // Internal logic to run standalone oscillators 
+            const runEomOsc = (f1, f2, dur, start) => {
+                const o1 = postAudioCtx.createOscillator();
+                const o2 = postAudioCtx.createOscillator();
+                const g = postAudioCtx.createGain();
+                o1.frequency.value = f1; o2.frequency.value = f2;
+                g.gain.setValueAtTime(vol / 2, start);
+                g.gain.setValueAtTime(vol / 2, start + dur - 0.01);
+                g.gain.exponentialRampToValueAtTime(0.0001, start + dur);
+                o1.connect(g); o2.connect(g); g.connect(postAudioCtx.destination);
+                o1.start(start); o2.start(start); o1.stop(start + dur); o2.stop(start + dur);
+                activeNodes.push(o1, o2, g);
+            };
+
+            for (let i = 0; i < 3; i++) {
+                runEomOsc(2083.3, 1562.5, 0.25, eomTime);
+                eomTime += 1.25; 
             }
-          });
+
+            setTimeout(() => {
+                if (!isPlaying) return;
+                stopAll();
+                statusText.textContent = "Transmission Finished Successfully.";
+            }, (eomTime - postAudioCtx.currentTime) * 1000);
         }
-      };
 
-      roomList.appendChild(div);
-    });
-  }
+        function stopAll() {
+            isPlaying = false;
+            if (speechSynthesis) speechSynthesis.cancel();
+            
+            if (activeAudioElement) {
+                activeAudioElement.pause();
+                activeAudioElement.currentTime = 0;
+                activeAudioElement = null;
+            }
 
-  // Users update
-  socket.on("users update", (data) => {
-    if (data.room !== currentRoom) return;
-    currentUsers = data.users || [];
-    if (onlinePanel.style.display === "flex") {
-      renderOnlinePanel();
-    }
-  });
+            activeNodes.forEach(node => {
+                try { node.stop(); } catch(e){}
+                try { node.disconnect(); } catch(e){}
+            });
+            activeNodes = [];
 
-  // Keep-alive pinger every 14 minutes
-  setInterval(() => {
-    fetch(BACKEND_URL + "/ping").catch(() => {});
-  }, 14 * 60 * 1000);
-</script>
+            if (audioCtx) {
+                audioCtx.close();
+                audioCtx = null;
+            }
 
+            broadcastBox.className = 'broadcast-box';
+            statusText.textContent = "Transmission Aborted.";
+            updateProgress(0);
+            playBtn.style.display = 'block';
+            stopBtn.style.display = 'none';
+        }
+
+        function playSequence() {
+            // Early file validation check
+            if (currentMode === 'file' && audioUpload.files.length === 0) {
+                alert("Please select and upload an audio file first!");
+                return;
+            }
+
+            isPlaying = true;
+            playBtn.style.display = 'none';
+            stopBtn.style.display = 'block';
+
+            audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            const vol = parseFloat(document.getElementById('volume').value) || 0.2;
+            
+            const bFreq = parseFloat(document.getElementById('beepFreq').value) || 1000;
+            const bLen = parseFloat(document.getElementById('beepLen').value) || 0.25;
+            
+            const f1 = parseFloat(document.getElementById('freq1').value) || 853;
+            const f2 = parseFloat(document.getElementById('freq2').value) || 960;
+            const attLen = parseFloat(document.getElementById('longDuration').value) || 8.0;
+            const textToSpeak = document.getElementById('alertText').value;
+
+            let now = audioCtx.currentTime;
+
+            // Phase 1: 3-Beep Attention Intro
+            statusText.textContent = "Sending Intro Beeps...";
+            updateProgress(10);
+            for(let i=0; i<3; i++) {
+                createTone(bFreq, bFreq, bLen, now, vol);
+                now += (bLen * 2);
+            }
+
+            // Phase 2: S.A.M.E Header Bursts
+            setTimeout(() => {
+                if (!isPlaying) return;
+                statusText.textContent = "Transmitting S.A.M.E. Headers...";
+                broadcastBox.classList.add('active-burst');
+                updateProgress(30);
+            }, (now - audioCtx.currentTime) * 1000);
+
+            for (let i = 0; i < 3; i++) {
+                createHeaderBurst(now, vol);
+                now += 1.25;
+            }
+
+            // Phase 3: Attention Dual Tone
+            setTimeout(() => {
+                if (!isPlaying) return;
+                broadcastBox.classList.remove('active-burst');
+                statusText.textContent = "Broadcasting Attention Tone...";
+                updateProgress(50);
+            }, (now - audioCtx.currentTime) * 1000);
+
+            createTone(f1, f2, attLen, now, vol);
+            now += attLen + 0.5;
+
+            // Phase 4: Audio Voice Relay Selection
+            setTimeout(() => {
+                if (!isPlaying) return;
+                statusText.textContent = "Relaying Voice Announcement...";
+                updateProgress(75);
+                broadcastBox.classList.add('active-crawl');
+                crawlText.textContent = textToSpeak;
+
+                if (currentMode === 'tts') {
+                    // System TTS Path
+                    currentUtterance = new SpeechSynthesisUtterance(textToSpeak);
+                    const selectedOption = voiceSelect.selectedOptions[0]?.getAttribute('data-name');
+                    const voices = speechSynthesis.getVoices();
+                    const matchedVoice = voices.find(v => v.name === selectedOption);
+                    if (matchedVoice) currentUtterance.voice = matchedVoice;
+
+                    currentUtterance.rate = 0.85;  
+                    currentUtterance.pitch = 0.70; 
+                    
+                    currentUtterance.onend = () => {
+                        if (!isPlaying) return;
+                        broadcastBox.classList.remove('active-crawl');
+                        triggerEomTails(vol);
+                    };
+                    speechSynthesis.speak(currentUtterance);
+
+                } else {
+                    // Custom Upload Audio File Path
+                    const file = audioUpload.files[0];
+                    const fileUrl = URL.createObjectURL(file);
+                    
+                    activeAudioElement = new Audio(fileUrl);
+                    activeAudioElement.volume = vol;
+                    
+                    activeAudioElement.onended = () => {
+                        if (!isPlaying) return;
+                        broadcastBox.classList.remove('active-crawl');
+                        URL.revokeObjectURL(fileUrl);
+                        triggerEomTails(vol);
+                    };
+
+                    activeAudioElement.play().catch(err => {
+                        console.error("Audio playback failed:", err);
+                        stopAll();
+                        alert("Could not play the uploaded file. Ensure it is a valid audio format.");
+                    });
+                }
+
+            }, (now - audioCtx.currentTime) * 1000);
+        }
+
+        playBtn.addEventListener('click', () => {
+            if(!isPlaying) playSequence();
+        });
+
+        stopBtn.addEventListener('click', stopAll);
+    </script>
 </body>
 </html>
